@@ -11,7 +11,7 @@
 ### 1. Клонирование и переход в директорию
 
 ```bash
-cd /Users/ilialoviagin/Projects/mirea/he-path-of-the-samurai
+cd he-path-of-the-samurai
 ```
 
 ### 2. Опционально: настройка переменных окружения
