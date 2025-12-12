@@ -1,20 +1,20 @@
 use chrono::{DateTime, Days, NaiveDateTime, TimeZone, Utc};
 use serde_json::Value;
 use sqlx::PgPool;
-use tracing::error;
 
+use std::sync::Arc;
 use crate::clients::{IssClient, NasaClient, SpaceXClient};
 use crate::domain::ApiError;
 use crate::repo::{CacheRepo, IssRepo, OsdrRepo};
 
 pub struct IssService {
     repo: IssRepo,
-    client: IssClient,
+    client: Arc<IssClient>,
     pool: PgPool,
 }
 
 impl IssService {
-    pub fn new(pool: PgPool, client: IssClient) -> Self {
+    pub fn new(pool: PgPool, client: Arc<IssClient>) -> Self {
         Self {
             repo: IssRepo,
             client,
@@ -90,12 +90,12 @@ impl IssService {
 
 pub struct OsdrService {
     repo: OsdrRepo,
-    client: NasaClient,
+    client: Arc<NasaClient>,
     pool: PgPool,
 }
 
 impl OsdrService {
-    pub fn new(pool: PgPool, client: NasaClient) -> Self {
+    pub fn new(pool: PgPool, client: Arc<NasaClient>) -> Self {
         Self {
             repo: OsdrRepo,
             client,
@@ -141,13 +141,13 @@ impl OsdrService {
 
 pub struct SpaceCacheService {
     repo: CacheRepo,
-    nasa_client: NasaClient,
-    spacex_client: SpaceXClient,
+    nasa_client: Arc<NasaClient>,
+    spacex_client: Arc<SpaceXClient>,
     pool: PgPool,
 }
 
 impl SpaceCacheService {
-    pub fn new(pool: PgPool, nasa_client: NasaClient, spacex_client: SpaceXClient) -> Self {
+    pub fn new(pool: PgPool, nasa_client: Arc<NasaClient>, spacex_client: Arc<SpaceXClient>) -> Self {
         Self {
             repo: CacheRepo,
             nasa_client,

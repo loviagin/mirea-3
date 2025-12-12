@@ -41,7 +41,12 @@ async fn main() -> anyhow::Result<()> {
     let state = AppState::new(pool.clone(), config.clone())?;
 
     // Background tasks with advisory locks to prevent overlapping
-    let intervals = &config.fetch_intervals;
+    let osdr_interval = config.fetch_intervals.osdr;
+    let iss_interval = config.fetch_intervals.iss;
+    let apod_interval = config.fetch_intervals.apod;
+    let neo_interval = config.fetch_intervals.neo;
+    let donki_interval = config.fetch_intervals.donki;
+    let spacex_interval = config.fetch_intervals.spacex;
     
     // OSDR background task
     {
@@ -50,7 +55,7 @@ async fn main() -> anyhow::Result<()> {
             loop {
                 // Use PostgreSQL advisory lock to prevent overlapping
                 let lock_key: i64 = 1001; // Unique key for OSDR
-                if let Ok(Some(_)) = sqlx::query_scalar::<_, bool>(
+                if let Ok(Some(true)) = sqlx::query_scalar::<_, bool>(
                     "SELECT pg_try_advisory_lock($1)"
                 )
                 .bind(lock_key)
@@ -61,12 +66,13 @@ async fn main() -> anyhow::Result<()> {
                     if let Err(e) = service.sync().await {
                         error!("OSDR sync error: {:?}", e);
                     }
+                    // Разблокируем только если блокировка была получена
                     let _: Result<_, _> = sqlx::query("SELECT pg_advisory_unlock($1)")
                         .bind(lock_key)
                         .execute(&state.pool)
                         .await;
                 }
-                tokio::time::sleep(Duration::from_secs(intervals.osdr)).await;
+                tokio::time::sleep(Duration::from_secs(osdr_interval)).await;
             }
         });
     }
@@ -77,7 +83,7 @@ async fn main() -> anyhow::Result<()> {
         tokio::spawn(async move {
             loop {
                 let lock_key: i64 = 1002; // Unique key for ISS
-                if let Ok(Some(_)) = sqlx::query_scalar::<_, bool>(
+                if let Ok(Some(true)) = sqlx::query_scalar::<_, bool>(
                     "SELECT pg_try_advisory_lock($1)"
                 )
                 .bind(lock_key)
@@ -93,7 +99,7 @@ async fn main() -> anyhow::Result<()> {
                         .execute(&state.pool)
                         .await;
                 }
-                tokio::time::sleep(Duration::from_secs(intervals.iss)).await;
+                tokio::time::sleep(Duration::from_secs(iss_interval)).await;
             }
         });
     }
@@ -104,7 +110,7 @@ async fn main() -> anyhow::Result<()> {
         tokio::spawn(async move {
             loop {
                 let lock_key: i64 = 1003;
-                if let Ok(Some(_)) = sqlx::query_scalar::<_, bool>(
+                if let Ok(Some(true)) = sqlx::query_scalar::<_, bool>(
                     "SELECT pg_try_advisory_lock($1)"
                 )
                 .bind(lock_key)
@@ -124,7 +130,7 @@ async fn main() -> anyhow::Result<()> {
                         .execute(&state.pool)
                         .await;
                 }
-                tokio::time::sleep(Duration::from_secs(intervals.apod)).await;
+                tokio::time::sleep(Duration::from_secs(apod_interval)).await;
             }
         });
     }
@@ -135,7 +141,7 @@ async fn main() -> anyhow::Result<()> {
         tokio::spawn(async move {
             loop {
                 let lock_key: i64 = 1004;
-                if let Ok(Some(_)) = sqlx::query_scalar::<_, bool>(
+                if let Ok(Some(true)) = sqlx::query_scalar::<_, bool>(
                     "SELECT pg_try_advisory_lock($1)"
                 )
                 .bind(lock_key)
@@ -155,7 +161,7 @@ async fn main() -> anyhow::Result<()> {
                         .execute(&state.pool)
                         .await;
                 }
-                tokio::time::sleep(Duration::from_secs(intervals.neo)).await;
+                tokio::time::sleep(Duration::from_secs(neo_interval)).await;
             }
         });
     }
@@ -166,7 +172,7 @@ async fn main() -> anyhow::Result<()> {
         tokio::spawn(async move {
             loop {
                 let lock_key: i64 = 1005;
-                if let Ok(Some(_)) = sqlx::query_scalar::<_, bool>(
+                if let Ok(Some(true)) = sqlx::query_scalar::<_, bool>(
                     "SELECT pg_try_advisory_lock($1)"
                 )
                 .bind(lock_key)
@@ -185,7 +191,7 @@ async fn main() -> anyhow::Result<()> {
                         .execute(&state.pool)
                         .await;
                 }
-                tokio::time::sleep(Duration::from_secs(intervals.donki)).await;
+                tokio::time::sleep(Duration::from_secs(donki_interval)).await;
             }
         });
     }
@@ -196,7 +202,7 @@ async fn main() -> anyhow::Result<()> {
         tokio::spawn(async move {
             loop {
                 let lock_key: i64 = 1006;
-                if let Ok(Some(_)) = sqlx::query_scalar::<_, bool>(
+                if let Ok(Some(true)) = sqlx::query_scalar::<_, bool>(
                     "SELECT pg_try_advisory_lock($1)"
                 )
                 .bind(lock_key)
@@ -216,7 +222,7 @@ async fn main() -> anyhow::Result<()> {
                         .execute(&state.pool)
                         .await;
                 }
-                tokio::time::sleep(Duration::from_secs(intervals.spacex)).await;
+                tokio::time::sleep(Duration::from_secs(spacex_interval)).await;
             }
         });
     }

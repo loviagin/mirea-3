@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 use serde_json::Value;
-use sqlx::PgPool;
+use sqlx::{PgPool, Row};
 
 use crate::domain::{IssFetchLog, OsdrItem, SpaceCache};
 

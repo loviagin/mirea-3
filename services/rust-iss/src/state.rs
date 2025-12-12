@@ -1,6 +1,5 @@
 use sqlx::PgPool;
 use std::sync::Arc;
-use std::time::Duration;
 
 use crate::clients::{IssClient, NasaClient, SpaceXClient};
 use crate::config::Config;

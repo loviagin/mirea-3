@@ -12,6 +12,8 @@ CREATE TABLE IF NOT EXISTS telemetry_legacy (
     recorded_at TIMESTAMPTZ NOT NULL,
     voltage NUMERIC(6,2) NOT NULL,
     temp NUMERIC(6,2) NOT NULL,
+    is_active TEXT,  
+    status_text TEXT,
     source_file TEXT NOT NULL
 );
 

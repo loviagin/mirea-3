@@ -22,7 +22,7 @@ pub async fn rate_limit_middleware(
     // Check rate limit if Redis is available
     if let Some(redis_url) = &state.config.redis_url {
         if let Ok(client) = redis::Client::open(redis_url.as_str()) {
-            if let Ok(mut conn) = client.get_async_connection().await {
+            if let Ok(mut conn) = client.get_multiplexed_async_connection().await {
                 let key = format!("rate_limit:{}", client_ip);
                 let limit = state.config.rate_limit_per_minute;
                 

@@ -1,7 +1,7 @@
 use std::time::Duration;
 use reqwest::Client;
 use serde_json::Value;
-use tracing::{error, warn};
+use tracing::warn;
 
 use crate::config::Config;
 use crate::domain::ApiError;
@@ -90,33 +90,45 @@ impl NasaClient {
     }
     
     pub async fn fetch_apod(&self) -> Result<Value, ApiError> {
-        let url = format!("https://api.nasa.gov/planetary/apod?thumbs=true{}",
-            if self.api_key.is_empty() { "" } else { &format!("&api_key={}", self.api_key) }
-        );
+        let api_key_param = if self.api_key.is_empty() {
+            String::new()
+        } else {
+            format!("&api_key={}", self.api_key)
+        };
+        let url = format!("https://api.nasa.gov/planetary/apod?thumbs=true{}", api_key_param);
         self.http.get_with_retry(&url).await
     }
     
     pub async fn fetch_neo_feed(&self, start_date: &str, end_date: &str) -> Result<Value, ApiError> {
+        let api_key_param = if self.api_key.is_empty() {
+            String::new()
+        } else {
+            format!("&api_key={}", self.api_key)
+        };
         let url = format!("https://api.nasa.gov/neo/rest/v1/feed?start_date={}&end_date={}{}",
-            start_date, end_date,
-            if self.api_key.is_empty() { "" } else { &format!("&api_key={}", self.api_key) }
-        );
+            start_date, end_date, api_key_param);
         self.http.get_with_retry(&url).await
     }
     
     pub async fn fetch_donki_flr(&self, start_date: &str, end_date: &str) -> Result<Value, ApiError> {
+        let api_key_param = if self.api_key.is_empty() {
+            String::new()
+        } else {
+            format!("&api_key={}", self.api_key)
+        };
         let url = format!("https://api.nasa.gov/DONKI/FLR?startDate={}&endDate={}{}",
-            start_date, end_date,
-            if self.api_key.is_empty() { "" } else { &format!("&api_key={}", self.api_key) }
-        );
+            start_date, end_date, api_key_param);
         self.http.get_with_retry(&url).await
     }
     
     pub async fn fetch_donki_cme(&self, start_date: &str, end_date: &str) -> Result<Value, ApiError> {
+        let api_key_param = if self.api_key.is_empty() {
+            String::new()
+        } else {
+            format!("&api_key={}", self.api_key)
+        };
         let url = format!("https://api.nasa.gov/DONKI/CME?startDate={}&endDate={}{}",
-            start_date, end_date,
-            if self.api_key.is_empty() { "" } else { &format!("&api_key={}", self.api_key) }
-        );
+            start_date, end_date, api_key_param);
         self.http.get_with_retry(&url).await
     }
 }

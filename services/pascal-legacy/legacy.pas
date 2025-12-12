@@ -3,7 +3,7 @@ program LegacyCSV;
 {$mode objfpc}{$H+}
 
 uses
-  SysUtils, DateUtils, Process, Math;
+  SysUtils, DateUtils, Unix, Math;
 
 function GetEnvDef(const name, def: string): string;
 var v: string;
@@ -49,14 +49,24 @@ begin
   // Заголовок
   Writeln(f, 'recorded_at,voltage,temp,is_active,status_text,source_file');
   // Данные с правильными типами
-  Writeln(f, 
-    FormatDateTime('yyyy-mm-dd"T"hh:nn:ss"Z"', timestamp) + ',' +  // TIMESTAMP в ISO 8601
-    FormatFloat('0.00', voltage) + ',' +                          // Число
-    FormatFloat('0.00', temp) + ',' +                             // Число
-    (IfThen(is_active, 'ИСТИНА', 'ЛОЖЬ')) + ',' +                 // Boolean: ИСТИНА/ЛОЖЬ
-    '"' + status_text + '"' + ',' +                                // Строка в кавычках
-    '"' + fn + '"'                                                  // Строка в кавычках
-  );
+  if is_active then
+    Writeln(f, 
+      FormatDateTime('yyyy-mm-dd"T"hh:nn:ss"Z"', timestamp) + ',' +  // TIMESTAMP в ISO 8601
+      FormatFloat('0.00', voltage) + ',' +                          // Число
+      FormatFloat('0.00', temp) + ',' +                             // Число
+      'ИСТИНА' + ',' +                                              // Boolean: ИСТИНА
+      '"' + status_text + '"' + ',' +                                // Строка в кавычках
+      '"' + fn + '"'                                                  // Строка в кавычках
+    )
+  else
+    Writeln(f, 
+      FormatDateTime('yyyy-mm-dd"T"hh:nn:ss"Z"', timestamp) + ',' +  // TIMESTAMP в ISO 8601
+      FormatFloat('0.00', voltage) + ',' +                          // Число
+      FormatFloat('0.00', temp) + ',' +                             // Число
+      'ЛОЖЬ' + ',' +                                               // Boolean: ЛОЖЬ
+      '"' + status_text + '"' + ',' +                                // Строка в кавычках
+      '"' + fn + '"'                                                  // Строка в кавычках
+    );
   CloseFile(f);
 
   // COPY into Postgres
@@ -68,10 +78,9 @@ begin
 
   // Use psql with COPY FROM PROGRAM for simplicity
   // Here we call psql reading from file
-  copyCmd := 'psql "host=' + pghost + ' port=' + pgport + ' user=' + pguser + ' dbname=' + pgdb + '" ' +
-             '-c "\copy telemetry_legacy(recorded_at, voltage, temp, source_file) FROM ''' + fullpath + ''' WITH (FORMAT csv, HEADER true)"';
-  // Mask password via env
-  SetEnvironmentVariable('PGPASSWORD', pgpass);
+  // Устанавливаем PGPASSWORD через переменную окружения в команде
+  copyCmd := 'PGPASSWORD=' + pgpass + ' psql "host=' + pghost + ' port=' + pgport + ' user=' + pguser + ' dbname=' + pgdb + '" ' +
+             '-c "\copy telemetry_legacy(recorded_at, voltage, temp, is_active, status_text, source_file) FROM ''' + fullpath + ''' WITH (FORMAT csv, HEADER true)"';
   // Execute
   fpSystem(copyCmd);
 end;
