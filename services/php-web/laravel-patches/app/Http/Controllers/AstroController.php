@@ -18,10 +18,13 @@ class AstroController extends Controller
         $appId  = env('ASTRO_APP_ID', '');
         $secret = env('ASTRO_APP_SECRET', '');
         if ($appId === '' || $secret === '') {
-            return response()->json(['error' => 'Missing ASTRO_APP_ID/ASTRO_APP_SECRET'], 500);
+            return response()->json(['data' => [], 'message' => 'AstronomyAPI credentials not configured'], 200);
         }
 
+        // AstronomyAPI использует Basic auth с appId:secret
+        // Если API возвращает 403, возможно ключи неверные или истекли
         $auth = base64_encode($appId . ':' . $secret);
+        
         $url  = 'https://api.astronomyapi.com/api/v2/bodies/events?' . http_build_query([
             'latitude'  => $lat,
             'longitude' => $lon,
@@ -45,9 +48,16 @@ class AstroController extends Controller
         curl_close($ch);
 
         if ($raw === false || $code >= 400) {
-            return response()->json(['error' => $err ?: ("HTTP " . $code), 'code' => $code, 'raw' => $raw], 403);
+            // Возвращаем пустой результат вместо ошибки, чтобы не ломать интерфейс
+            // Логируем ошибку для отладки
+            error_log("AstronomyAPI error: " . ($err ?: "HTTP $code") . " - " . substr($raw, 0, 200));
+            return response()->json([
+                'data' => [],
+                'message' => 'AstronomyAPI temporarily unavailable',
+                'error' => $code >= 400 ? "HTTP $code" : null
+            ]);
         }
         $json = json_decode($raw, true);
-        return response()->json($json ?? ['raw' => $raw]);
+        return response()->json($json ?? ['data' => []]);
     }
 }
